@@ -28,11 +28,11 @@ export function LogsView({ logs }: Props): JSX.Element | null {
         <span aria-hidden>{open ? '▾' : '▸'}</span>
       </button>
       {open ? (
-        <ol className="mt-2 max-h-40 overflow-auto rounded border border-slate-100 bg-slate-50 p-2 font-mono text-[11px] leading-snug">
+        <ol className="mt-2 max-h-60 overflow-auto rounded border border-slate-100 bg-slate-50 p-2 font-mono text-[11px] leading-snug">
           {logs.map((entry, idx) => (
             <li
               key={`${entry.timestamp}-${idx}`}
-              className={LEVEL_COLOR[entry.level]}
+              className={`mb-1 ${LEVEL_COLOR[entry.level]}`}
               title={formatLogEntry(entry)}
             >
               <span className="text-slate-400">
@@ -41,6 +41,11 @@ export function LogsView({ logs }: Props): JSX.Element | null {
               <span className="uppercase">{entry.level}</span>{' '}
               <span className="text-slate-400">({entry.scope})</span>{' '}
               {entry.message}
+              {entry.context && Object.keys(entry.context).length > 0 ? (
+                <pre className="mt-0.5 ml-6 whitespace-pre-wrap break-all text-[10px] text-slate-500">
+                  {JSON.stringify(entry.context)}
+                </pre>
+              ) : null}
             </li>
           ))}
         </ol>

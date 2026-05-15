@@ -41,7 +41,12 @@ async function handleMessage(message: AnyRequest): Promise<unknown> {
       return checkSession(logger);
     }
     case 'APPLY_TO_JOB': {
-      return applyToJob(message.jobUrl, message.requestId);
+      return applyToJob(
+        message.jobUrl,
+        message.requestId,
+        message.resume,
+        message.coverLetter,
+      );
     }
     case 'CANCEL_APPLY': {
       const cancelled = cancelApply(message.requestId);

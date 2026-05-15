@@ -27,6 +27,28 @@ export interface ScrapedField {
   required: boolean;
 }
 
+export interface ScrapedFileField {
+  name: string;
+  accept: string | null;
+  required: boolean;
+  /** True if the field's name or surrounding label suggests it wants a resume/CV. */
+  looksLikeResume: boolean;
+}
+
+/**
+ * Resume bytes carried from popup → background. We use base64 because
+ * `chrome.runtime.sendMessage` only round-trips structured-clonable data
+ * cleanly across all Chrome versions, and a string is the safest currency.
+ */
+export interface ResumeAttachment {
+  fileName: string;
+  mimeType: string;
+  /** Raw bytes, base64-encoded (no `data:` prefix). */
+  base64: string;
+  /** Decoded byte length, for quota checks. */
+  byteLength: number;
+}
+
 export interface ScrapedForm {
   jobId: string | null;
   jobTitle: string | null;
@@ -37,6 +59,7 @@ export interface ScrapedForm {
   csrfToken: string | null;
   csrfTokenFieldName: string | null;
   fields: ScrapedField[];
+  fileFields: ScrapedFileField[];
   notes: string[];
 }
 

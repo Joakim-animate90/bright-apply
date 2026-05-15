@@ -45,3 +45,48 @@ export const SENSITIVE_FIELD_FRAGMENTS = [
 ];
 
 export const MAX_LOG_ENTRIES = 200;
+
+/** Hard cap on resume file size we accept from the user (10 MB). */
+export const MAX_RESUME_BYTES = 10 * 1024 * 1024;
+
+/** MIME types we accept for resume uploads. */
+export const ACCEPTED_RESUME_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/rtf',
+] as const;
+
+/** Field-name fragments that hint at "this file input wants the resume". */
+export const RESUME_FIELD_HINTS = ['resume', 'cv', 'curriculum'];
+
+/**
+ * Field-name fragments that mark a "cover letter / message" textarea. Order
+ * matters — earlier entries win when multiple match. `description` is first
+ * because BrighterMonday's apply endpoint uses that exact key.
+ */
+export const COVER_LETTER_FIELD_HINTS = [
+  'description',
+  'cover_letter',
+  'coverletter',
+  'cover-letter',
+  'application_message',
+  'message',
+  'note',
+];
+
+/** Soft cap on how long a user-supplied cover letter can be. */
+export const MAX_COVER_LETTER_CHARS = 4000;
+
+/** Used when the apply form needs a cover letter but the user didn't supply one. */
+export const DEFAULT_COVER_LETTER = `Dear Hiring Manager,
+
+I am writing to express my interest in this opportunity. After reviewing the role, I believe my background, skills, and motivation make me a strong fit for what your team is looking for.
+
+I am a quick learner who values collaboration, takes ownership of my work, and is committed to delivering quality results. I am confident I can contribute meaningfully to your organisation and grow alongside the team.
+
+My CV is attached for your review. I would welcome the chance to discuss how I can add value to your work and look forward to hearing from you.
+
+Kind regards,
+The Applicant`;

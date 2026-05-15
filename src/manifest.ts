@@ -15,24 +15,13 @@ export default defineManifest({
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
-  content_scripts: [
-    {
-      matches: ['https://*.brightermonday.co.ke/*'],
-      js: ['src/content/index.ts'],
-      run_at: 'document_idle',
-      all_frames: false,
-    },
-  ],
+  // No declarative content_scripts: the scraper is injected on demand via
+  // `chrome.scripting.executeScript`, which avoids load-order races and the
+  // strict-CSP gotchas of dynamic-import loaders.
   permissions: ['tabs', 'cookies', 'storage', 'scripting', 'activeTab'],
   host_permissions: [
     'https://www.brightermonday.co.ke/*',
     'https://brightermonday.co.ke/*',
     'https://*.brightermonday.co.ke/*',
-  ],
-  web_accessible_resources: [
-    {
-      resources: ['assets/*'],
-      matches: ['https://*.brightermonday.co.ke/*'],
-    },
   ],
 });

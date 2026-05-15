@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TIMEOUTS } from '@/shared/constants';
 import { createLogger } from '@/shared/logger';
 import { sendToBackground } from '@/shared/messages';
+import { clearPopupSessionState } from '@/shared/sessionState';
 import type { LogEntry } from '@/shared/types';
 import { parseJobUrl } from '@/shared/url';
 import { ApplyButton } from './components/ApplyButton';
+import { CoverLetterEditor } from './components/CoverLetterEditor';
 import { JobUrlInput } from './components/JobUrlInput';
 import { LogsView } from './components/LogsView';
 import { ResultPanel } from './components/ResultPanel';
+import { ResumePicker } from './components/ResumePicker';
 import { StatusBadge } from './components/StatusBadge';
+import { getPopupMode, openInWindow, restoreSessionState } from './popupMode';
 import { usePopupStore } from './store';
 
 const popupLogger = createLogger('popup');
@@ -30,15 +34,40 @@ export function App(): JSX.Element {
     result,
     failure,
     logs,
+    resume,
+    resumeError,
+    coverLetter,
     setJobUrl,
     setSession,
     setCheckingSession,
     startApply,
     finishApply,
     appendLogs,
+    setResume,
+    setResumeError,
+    setCoverLetter,
   } = usePopupStore();
 
+  const [mode] = useState(getPopupMode);
   const responseTimeoutRef = useRef<number | null>(null);
+
+  // Restore state that survived the popover→window transition.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const restored = await restoreSessionState();
+      if (cancelled || !restored) return;
+      if (restored.jobUrl) setJobUrl(restored.jobUrl);
+      if (restored.resume) setResume(restored.resume);
+      if (restored.coverLetter) setCoverLetter(restored.coverLetter);
+      // Only consume the snapshot once we're actually windowed — a fresh
+      // popover open shouldn't blow away pending state.
+      if (mode === 'windowed') await clearPopupSessionState();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, setCoverLetter, setJobUrl, setResume]);
 
   const refreshSession = useCallback(async () => {
     setCheckingSession(true);
@@ -63,6 +92,16 @@ export function App(): JSX.Element {
   useEffect(() => {
     refreshSession();
   }, [refreshSession]);
+
+  const handleOpenInWindow = useCallback(async (): Promise<void> => {
+    try {
+      await openInWindow({ jobUrl, resume, coverLetter });
+    } catch (err) {
+      popupLogger.error('Failed to open in window', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, [coverLetter, jobUrl, resume]);
 
   const handleApply = useCallback(async () => {
     let valid = false;
@@ -112,6 +151,8 @@ export function App(): JSX.Element {
         type: 'APPLY_TO_JOB',
         jobUrl,
         requestId,
+        ...(resume ? { resume } : {}),
+        ...(coverLetter.trim() ? { coverLetter } : {}),
       });
       window.clearTimeout(timeoutHandle);
       responseTimeoutRef.current = null;
@@ -139,7 +180,7 @@ export function App(): JSX.Element {
         logs: popupLogger.entries() as LogEntry[],
       });
     }
-  }, [appendLogs, finishApply, jobUrl, startApply]);
+  }, [appendLogs, coverLetter, finishApply, jobUrl, resume, startApply]);
 
   const handleCancel = useCallback(async () => {
     if (!currentRequestId) return;
@@ -166,6 +207,16 @@ export function App(): JSX.Element {
             One-click apply on BrighterMonday
           </p>
         </div>
+        {mode === 'popover' ? (
+          <button
+            type="button"
+            onClick={() => void handleOpenInWindow()}
+            className="text-xs font-medium text-brand-600 hover:text-brand-700"
+            title="Open in a window so file pickers don't dismiss the popup"
+          >
+            Pop out ↗
+          </button>
+        ) : null}
       </header>
 
       <StatusBadge
@@ -193,6 +244,23 @@ export function App(): JSX.Element {
         value={jobUrl}
         disabled={isApplying}
         onChange={setJobUrl}
+      />
+
+      <ResumePicker
+        resume={resume}
+        error={resumeError}
+        disabled={isApplying}
+        mode={mode}
+        onPick={setResume}
+        onClear={() => setResume(null)}
+        onError={setResumeError}
+        onRequireWindow={() => void handleOpenInWindow()}
+      />
+
+      <CoverLetterEditor
+        value={coverLetter}
+        disabled={isApplying}
+        onChange={setCoverLetter}
       />
 
       <ApplyButton

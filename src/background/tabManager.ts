@@ -1,7 +1,6 @@
 import { TIMEOUTS } from '@/shared/constants';
 import { BrightApplyError } from '@/shared/errors';
 import type { Logger } from '@/shared/logger';
-import { sendToTab } from '@/shared/messages';
 
 export async function openHiddenTab(
   url: string,
@@ -117,40 +116,4 @@ export function waitForTabComplete(
       }
     });
   });
-}
-
-/**
- * Wait for the content script to acknowledge a ping. Useful because content
- * scripts can take a moment to attach after the tab reports `complete`.
- */
-export async function waitForContentScript(
-  tabId: number,
-  signal: AbortSignal,
-  logger: Logger,
-  attempts = 20,
-  intervalMs = 250,
-): Promise<void> {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    if (signal.aborted) {
-      throw new BrightApplyError('ABORTED', 'Aborted while waiting for content script.');
-    }
-    try {
-      const response = await sendToTab(tabId, { type: 'PING_CONTENT' });
-      if (response.pong) {
-        logger.info('Content script reachable', { tabId, attempt });
-        return;
-      }
-    } catch (err) {
-      logger.debug('Content script not ready yet', {
-        tabId,
-        attempt,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  throw new BrightApplyError(
-    'CONTENT_SCRIPT_UNREACHABLE',
-    `Content script never responded after ${attempts} attempts.`,
-  );
 }

@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import type { ApplyAttemptSummary, ApplyFailure, LogEntry, SessionInfo } from '@/shared/types';
+import type {
+  ApplyAttemptSummary,
+  ApplyFailure,
+  LogEntry,
+  ResumeAttachment,
+  SessionInfo,
+} from '@/shared/types';
 
 export interface PopupState {
   jobUrl: string;
@@ -12,6 +18,9 @@ export interface PopupState {
   result: ApplyAttemptSummary | null;
   failure: ApplyFailure | null;
   logs: LogEntry[];
+  resume: ResumeAttachment | null;
+  resumeError: string | null;
+  coverLetter: string;
   setJobUrl(url: string): void;
   setSession(info: SessionInfo): void;
   setCheckingSession(checking: boolean): void;
@@ -22,6 +31,9 @@ export interface PopupState {
     logs: LogEntry[];
   }): void;
   appendLogs(logs: LogEntry[]): void;
+  setResume(resume: ResumeAttachment | null): void;
+  setResumeError(message: string | null): void;
+  setCoverLetter(text: string): void;
   reset(): void;
 }
 
@@ -36,6 +48,9 @@ export const usePopupStore = create<PopupState>((set) => ({
   result: null,
   failure: null,
   logs: [],
+  resume: null,
+  resumeError: null,
+  coverLetter: '',
   setJobUrl(url) {
     set({ jobUrl: url });
   },
@@ -69,6 +84,15 @@ export const usePopupStore = create<PopupState>((set) => ({
   },
   appendLogs(logs) {
     set((state) => ({ logs: [...state.logs, ...logs] }));
+  },
+  setResume(resume) {
+    set({ resume, resumeError: null });
+  },
+  setResumeError(message) {
+    set({ resumeError: message });
+  },
+  setCoverLetter(text) {
+    set({ coverLetter: text });
   },
   reset() {
     set({
